@@ -11,11 +11,17 @@ const DoctorLogin = () => {
 
     const onSubmitForm = async (event) => {
         event.preventDefault();
+        
+        // Prevent multiple submissions
+        if (isLoading) {
+            return;
+        }
+
         setIsLoading(true);
         setErrorMsg('');
 
         try {
-            console.log('Attempting doctor login...'); // Debug log
+            console.log('Attempting to connect to:', 'http://localhost:3008/doctor-login'); // Debug log
             
             const response = await fetch('http://localhost:3008/doctor-login', {
                 method: 'POST',
@@ -23,20 +29,36 @@ const DoctorLogin = () => {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({ 
+                    username, 
+                    password 
+                }),
                 credentials: 'include'
             });
 
-            console.log('Response status:', response.status); // Debug log
-            
-            const data = await response.json();
-            console.log('Response data:', data); // Debug log
+            console.log('Response received:', response.status); // Debug log
 
-            if (response.ok) {
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Login successful:', data); // Debug log
+            
+            if (data.jwt_token) {
                 // Store the JWT token
                 Cookies.set('jwt_token', data.jwt_token, { expires: 30 });
+                
                 // Store doctor details
-                localStorage.setItem('doctorDetails', JSON.stringify(data.doctor));
+                const doctorDetails = {
+                    id: data.doctor.id,
+                    name: data.doctor.name,
+                    specialization: data.doctor.specialization
+                };
+                console.log('Storing doctor details:', doctorDetails); // Debug log
+                localStorage.setItem('doctorDetails', JSON.stringify(doctorDetails));
+                
                 // Redirect to dashboard
                 history.push('/doctor-dashboard');
             } else {
@@ -44,7 +66,11 @@ const DoctorLogin = () => {
             }
         } catch (error) {
             console.error('Login error:', error);
-            setErrorMsg('Failed to connect to server. Please make sure the server is running on port 3008');
+            if (error.message === 'Failed to fetch') {
+                setErrorMsg('Unable to connect to server. Please check if the server is running on port 3008');
+            } else {
+                setErrorMsg(error.message || 'An error occurred during login');
+            }
         } finally {
             setIsLoading(false);
         }
