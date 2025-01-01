@@ -99,7 +99,7 @@ const DoctorBookingHistory = () => {
                 console.log('Fetching appointments for doctor:', doctorDetails.id);
                 
                 const response = await fetch(
-                    `http://localhost:3008/api/doctor-appointments/${doctorDetails.id}`,
+                    `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
                     {
                         method: 'GET',
                         headers: {
@@ -194,7 +194,7 @@ const DoctorBookingHistory = () => {
     const viewPatientHistory = async (patientId, patientName) => {
         try {
             const response = await fetch(
-                `http://localhost:3008/api/patient-history/${patientId}/${doctorDetails.id}`
+                `http://localhost:3009/api/patient-history/${patientId}/${doctorDetails.id}`
             );
 
             if (!response.ok) {

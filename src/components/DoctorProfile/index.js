@@ -5,7 +5,8 @@ import Cookies from 'js-cookie';
 const DoctorProfile = () => {
     const history = useHistory();
     const doctorDetails = JSON.parse(localStorage.getItem('doctorDetails'));
-
+    console.log("jk")
+    console.log(doctorDetails)
     useEffect(() => {
         const token = Cookies.get('jwt_token');
         if (!token) {
@@ -71,9 +72,9 @@ const DoctorProfile = () => {
                     <InfoRow label="Username" value={doctorDetails.username} />
                     <InfoRow label="Specialization" value={doctorDetails.specialization} />
                     <InfoRow label="Location" value={doctorDetails.location} />
-                    <InfoRow label="Appointment Cost" value={`₹${doctorDetails.appointment_cost}`} />
+                    <InfoRow label="Appointment Cost" value={`₹${doctorDetails.cost}`} />
                     <InfoRow label="Rating" value={doctorDetails.rating} />
-                    <InfoRow label="Phone Number" value={doctorDetails.phone_number} />
+                    <InfoRow label="Phone Number" value={doctorDetails.number} />
                 </div>
             </div>
         </div>

@@ -24,7 +24,7 @@ const DoctorDashboard = () => {
             setError(null);
             
             const response = await fetch(
-                `http://localhost:3008/api/doctor-appointments/${doctorDetails.id}`,
+                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${Cookies.get('jwt_token')}`

@@ -21,9 +21,9 @@ const DoctorLogin = () => {
         setErrorMsg('');
 
         try {
-            console.log('Attempting to connect to:', 'http://localhost:3008/doctor-login'); // Debug log
+            console.log('Attempting to connect to:', 'http://localhost:3009/doctor-login'); // Debug log
             
-            const response = await fetch('http://localhost:3008/doctor-login', {
+            const response = await fetch('http://localhost:3009/doctor-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -44,6 +44,7 @@ const DoctorLogin = () => {
             }
 
             const data = await response.json();
+            console.log(data.doctor)
             console.log('Login successful:', data); // Debug log
             
             if (data.jwt_token) {
@@ -54,8 +55,16 @@ const DoctorLogin = () => {
                 const doctorDetails = {
                     id: data.doctor.id,
                     name: data.doctor.name,
-                    specialization: data.doctor.specialization
+                    username:data.doctor.username,
+                    specialization: data.doctor.specialization,
+                    location:data.doctor.location,
+                    cost:data.doctor.appointment_cost,
+                    rating:data.doctor.rating,
+                    number:data.doctor.phone_number
+
                 };
+                console.log("nnnn")
+                console.log(doctorDetails)
                 console.log('Storing doctor details:', doctorDetails); // Debug log
                 localStorage.setItem('doctorDetails', JSON.stringify(doctorDetails));
                 
@@ -67,7 +76,7 @@ const DoctorLogin = () => {
         } catch (error) {
             console.error('Login error:', error);
             if (error.message === 'Failed to fetch') {
-                setErrorMsg('Unable to connect to server. Please check if the server is running on port 3008');
+                setErrorMsg('Unable to connect to server. Please check if the server is running on port 3009');
             } else {
                 setErrorMsg(error.message || 'An error occurred during login');
             }
