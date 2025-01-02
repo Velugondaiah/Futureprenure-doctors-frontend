@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import { Link } from 'react-router-dom';
 
 // Add PatientHistoryModal component
 const PatientHistoryModal = ({ patient, history, onClose }) => {
@@ -81,6 +82,15 @@ const DoctorBookingHistory = () => {
     const [showModal, setShowModal] = useState(false);
     const [patientHistory, setPatientHistory] = useState([]);
     const doctorDetails = JSON.parse(localStorage.getItem('doctorDetails'));
+
+    const isAppointmentTime = (date, time) => {
+        const appointmentDateTime = new Date(`${date}T${time}`);
+        const now = new Date();
+        
+        // Enable button 5 minutes before and up to 30 minutes after appointment time
+        const timeDifferenceInMinutes = (now - appointmentDateTime) / (1000 * 60);
+        return timeDifferenceInMinutes >= -5 && timeDifferenceInMinutes <= 30;
+    };
 
     useEffect(() => {
         const loadAppointments = async () => {
@@ -251,19 +261,58 @@ const DoctorBookingHistory = () => {
                                 </span>
                             </td>
                             <td style={cellStyle}>
-                                <button
-                                    onClick={() => viewPatientHistory(appointment.user_id, appointment.patient_name)}
-                                    style={{
-                                        padding: '5px 10px',
-                                        backgroundColor: '#007bff',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '4px',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    View History
-                                </button>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <button
+                                        onClick={() => viewPatientHistory(appointment.user_id, appointment.patient_name)}
+                                        style={{
+                                            padding: '5px 10px',
+                                            backgroundColor: '#007bff',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '4px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        View History
+                                    </button>
+                                    
+                                    {/* Video Consultation Button */}
+                                    {appointment.mode === 'Online' && (
+                                        isAppointmentTime(appointment.date, appointment.time) ? (
+                                            <Link 
+                                                to={`/doctor/video-consultation/${appointment.id}`}
+                                                style={{
+                                                    padding: '5px 10px',
+                                                    backgroundColor: '#28a745',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    textDecoration: 'none',
+                                                    display: 'inline-block'
+                                                }}
+                                            >
+                                                Start Video Call
+                                            </Link>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                style={{
+                                                    padding: '5px 10px',
+                                                    backgroundColor: '#e2e6ea',
+                                                    color: '#666',
+                                                    border: 'none',
+                                                    borderRadius: '4px',
+                                                    cursor: 'not-allowed'
+                                                }}
+                                            >
+                                                {new Date(`${appointment.date}T${appointment.time}`) > new Date() 
+                                                    ? 'Call Not Started Yet'
+                                                    : 'Call Ended'}
+                                            </button>
+                                        )
+                                    )}
+                                </div>
                             </td>
                         </tr>
                     ))}
