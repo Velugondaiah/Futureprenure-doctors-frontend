@@ -4,6 +4,7 @@ import DoctorDashboard from './components/DoctorDashboard';
 import UserDashboard from './components/UserDashboard';
 import DoctorProfile from './components/DoctorProfile';
 import DoctorBookingHistory from './components/DoctorBookingHistory';
+import VideoConsultation from './components/VideoConsultation';
 import './App.css';
 
 function App() {
@@ -77,6 +78,9 @@ function App() {
           <Route exact path="/doctor-booking-history">
             <DoctorBookingHistory />
           </Route>
+
+          <Route path="/doctor/appointments" component={DoctorBookingHistory} />
+          <Route path="/doctor/video-consultation/:appointmentId" component={VideoConsultation} />
           
           {/* 404 Route */}
           <Route path="*">
