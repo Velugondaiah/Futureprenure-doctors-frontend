@@ -1,0 +1,125 @@
+.doctor-appointments-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+.appointments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.appointments-table th {
+    background-color: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.appointments-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.mode-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.mode-badge.online {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.mode-badge.in-person {
+    background-color: #eff6ff;
+    color: #3b82f6;
+}
+
+.join-call-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #2563eb;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.join-call-button:hover {
+    background-color: #1d4ed8;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.badge.upcoming {
+    background-color: #fef3c7;
+    color: #d97706;
+}
+
+.badge.completed {
+    background-color: #e5e7eb;
+    color: #6b7280;
+}
+
+.badge.in-person {
+    background-color: #eff6ff;
+    color: #3b82f6;
+}
+
+.action-cell {
+    white-space: nowrap;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+h1 {
+    color: #1e40af;
+    font-size: 1.875rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .doctor-appointments-container {
+        padding: 1rem;
+    }
+
+    .appointments-table {
+        font-size: 0.875rem;
+    }
+
+    .appointments-table th,
+    .appointments-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .join-call-button,
+    .badge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
