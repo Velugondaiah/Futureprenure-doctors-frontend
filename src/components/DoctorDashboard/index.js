@@ -12,7 +12,7 @@ const DoctorDashboard = () => {
         const fetchDoctorDetails = async () => {
             try {
                 const token = Cookies.get('jwt_token');
-                const response = await fetch('http://localhost:3009/api/doctor/profile', {
+                const response = await fetch('https://backend-diagno.onrender.com/api/doctor/profile', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }

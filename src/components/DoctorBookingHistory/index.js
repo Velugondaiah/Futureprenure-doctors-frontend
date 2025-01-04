@@ -35,7 +35,7 @@ const DoctorBookingHistory = () => {
             console.log('Fetching appointments for doctor:', doctorDetails.id);
 
             const response = await fetch(
-                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
+                `https://backend-diagno.onrender.com/api/doctor-appointments/${doctorDetails.id}`,
                 {
                     headers: {
                         'Authorization': `Bearer ${Cookies.get('jwt_token')}`,

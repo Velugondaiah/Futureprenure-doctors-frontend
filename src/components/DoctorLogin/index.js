@@ -21,9 +21,9 @@ const DoctorLogin = () => {
         setErrorMsg('');
 
         try {
-            console.log('Attempting to connect to:', 'http://localhost:3009/doctor-login'); // Debug log
+            console.log('Attempting to connect to:', 'https://backend-diagno.onrender.com/doctor-login'); // Debug log
             
-            const response = await fetch('http://localhost:3009/doctor-login', {
+            const response = await fetch('https://backend-diagno.onrender.com/doctor-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
