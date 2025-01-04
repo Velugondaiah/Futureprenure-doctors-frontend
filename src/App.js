@@ -5,10 +5,17 @@ import DoctorDashboard from './components/DoctorDashboard';
 import DoctorBookingHistory from './components/DoctorBookingHistory';
 import DoctorProfile from './components/DoctorProfile';
 import VideoRoom from './components/VideoRoom';
-import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
+import Cookies from 'js-cookie';
 
 const App = () => {
+  // Check if doctor is authenticated
+  const isAuthenticated = () => {
+    const jwtToken = Cookies.get('jwt_token');
+    const doctorDetails = localStorage.getItem('doctorDetails');
+    return jwtToken && doctorDetails;
+  };
+
   return (
     <BrowserRouter>
       <Switch>
@@ -20,11 +27,46 @@ const App = () => {
         {/* Public routes */}
         <Route exact path="/doctor-login" component={DoctorLogin} />
 
-        {/* Protected routes */}
-        <ProtectedRoute exact path="/doctor-dashboard" component={DoctorDashboard} />
-        <ProtectedRoute exact path="/doctor-booking-history" component={DoctorBookingHistory} />
-        <ProtectedRoute exact path="/doctor-profile" component={DoctorProfile} />
-        <ProtectedRoute exact path="/doctor/video-room/:meeting_id" component={VideoRoom} />
+        {/* Regular routes with authentication check */}
+        <Route exact path="/doctor-dashboard" 
+          render={props => 
+            isAuthenticated() ? (
+              <DoctorDashboard {...props} />
+            ) : (
+              <Redirect to="/doctor-login" />
+            )
+          }
+        />
+
+        <Route exact path="/doctor-booking-history" 
+          render={props => 
+            isAuthenticated() ? (
+              <DoctorBookingHistory {...props} />
+            ) : (
+              <Redirect to="/doctor-login" />
+            )
+          }
+        />
+
+        <Route exact path="/doctor-profile" 
+          render={props => 
+            isAuthenticated() ? (
+              <DoctorProfile {...props} />
+            ) : (
+              <Redirect to="/doctor-login" />
+            )
+          }
+        />
+
+        <Route exact path="/doctor/video-room/:meeting_id" 
+          render={props => 
+            isAuthenticated() ? (
+              <VideoRoom {...props} />
+            ) : (
+              <Redirect to="/doctor-login" />
+            )
+          }
+        />
 
         {/* 404 route */}
         <Route path="*">

@@ -3,23 +3,21 @@ import { Route, Redirect } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 const ProtectedRoute = ({ component: Component, ...rest }) => {
-  const token = Cookies.get('jwt_token');
-  
   return (
     <Route
       {...rest}
-      render={props =>
-        token ? (
-          <Component {...props} />
-        ) : (
-          <Redirect
-            to={{
-              pathname: '/doctor-login',
-              state: { from: props.location }
-            }}
-          />
-        )
-      }
+      render={props => {
+        const token = Cookies.get('jwt_token');
+        const doctorDetails = localStorage.getItem('doctorDetails');
+
+        if (!token || !doctorDetails) {
+          // Redirect to login if not authenticated
+          return <Redirect to="/doctor-login" />;
+        }
+
+        // Render component if authenticated
+        return <Component {...props} />;
+      }}
     />
   );
 };

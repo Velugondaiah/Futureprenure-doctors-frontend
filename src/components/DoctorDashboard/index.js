@@ -1,173 +1,55 @@
-import { useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import './index.css';
 
 const DoctorDashboard = () => {
-    const history = useHistory();
-    const [appointments, setAppointments] = useState([]);
+    const [doctorInfo, setDoctorInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const doctorDetails = JSON.parse(localStorage.getItem('doctorDetails'));
+    const history = useHistory();
 
     useEffect(() => {
-        const token = Cookies.get('jwt_token');
-        if (!token) {
-            history.replace('/doctor-login');
-        } else {
-            fetchAppointments();
+        const doctorDetails = localStorage.getItem('doctorDetails');
+        if (!doctorDetails) {
+            history.push('/doctor-login');
+            return;
         }
+        setDoctorInfo(JSON.parse(doctorDetails));
+        setIsLoading(false);
     }, [history]);
 
-    const fetchAppointments = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            
-            const response = await fetch(
-                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${Cookies.get('jwt_token')}`
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch appointments');
-            }
-
-            const data = await response.json();
-            setAppointments(data);
-        } catch (error) {
-            console.error('Error:', error);
-            setError('Failed to load appointments');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleLogout = () => {
-        Cookies.remove('jwt_token');
         localStorage.removeItem('doctorDetails');
-        history.replace('/doctor-login');
+        Cookies.remove('jwt_token');
+        history.push('/doctor-login');
     };
 
-    const navigateToProfile = () => {
-        history.push('/doctor-profile');
-    };
-
-    const navigateToBookingHistory = () => {
-        history.push('/doctor-booking-history');
-    };
-
-    if (!doctorDetails) {
-        return null;
+    if (isLoading) {
+        return <div className="loading">Loading...</div>;
     }
 
     return (
-        <div style={{
-            padding: '20px',
-            maxWidth: '1200px',
-            margin: '0 auto',
-            backgroundColor: '#f5f5f5',
-            minHeight: '100vh'
-        }}>
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '30px',
-                backgroundColor: 'white',
-                padding: '20px',
-                borderRadius: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}>
-                <h1 style={{ margin: 0, color: '#333' }}>
-                    Welcome, Dr. {doctorDetails.name}
-                </h1>
-                <button
-                    onClick={handleLogout}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                    }}
-                >
+        <div className="dashboard-container">
+            <nav className="dashboard-nav">
+                <h1>Doctor Dashboard</h1>
+                <button onClick={handleLogout} className="logout-button">
                     Logout
                 </button>
-            </div>
-
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                gap: '20px',
-                padding: '20px 0'
-            }}>
-                <div style={{
-                    backgroundColor: 'white',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    ':hover': {
-                        transform: 'translateY(-5px)'
-                    }
-                }}
-                onClick={navigateToProfile}
-                >
-                    <h2 style={{ color: '#333', marginBottom: '15px' }}>Profile</h2>
-                    <p style={{ color: '#666' }}>View and manage your profile information</p>
-                    <button
-                        style={{
-                            marginTop: '15px',
-                            padding: '10px 20px',
-                            backgroundColor: '#4CAF50',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            width: '100%'
-                        }}
-                    >
-                        View Profile
-                    </button>
-                </div>
-
-                <div style={{
-                    backgroundColor: 'white',
-                    padding: '20px',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s',
-                    ':hover': {
-                        transform: 'translateY(-5px)'
-                    }
-                }}
-                onClick={navigateToBookingHistory}
-                >
-                    <h2 style={{ color: '#333', marginBottom: '15px' }}>Booking History</h2>
-                    <p style={{ color: '#666' }}>View your appointment history</p>
-                    <button
-                        style={{
-                            marginTop: '15px',
-                            padding: '10px 20px',
-                            backgroundColor: '#2196F3',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            width: '100%'
-                        }}
-                    >
-                        View History
-                    </button>
+            </nav>
+            
+            <div className="dashboard-content">
+                {doctorInfo && (
+                    <div className="doctor-info">
+                        <h2>Welcome, Dr. {doctorInfo.name}</h2>
+                        <p>Specialization: {doctorInfo.specialist}</p>
+                    </div>
+                )}
+                
+                <div className="dashboard-actions">
+                    <Link to="/doctor-booking-history" className="dashboard-link">
+                        View Appointments
+                    </Link>
+                    {/* Add more dashboard actions as needed */}
                 </div>
             </div>
         </div>
