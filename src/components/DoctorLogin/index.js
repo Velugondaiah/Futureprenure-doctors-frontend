@@ -22,7 +22,7 @@ const DoctorLogin = () => {
 
         try {
             console.log('Attempting to connect to:', 'https://backend-diagno.onrender.com/doctor-login'); // Debug log
-            
+            //
             const response = await fetch('https://backend-diagno.onrender.com/doctor-login', {
                 method: 'POST',
                 headers: {
