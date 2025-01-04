@@ -92,7 +92,7 @@ const VideoRoom = () => {
                 peerConnectionRef.current = pc;
 
                 // 3. Set up socket connection
-                socketRef.current = io('http://localhost:3009', {
+                socketRef.current = io('https://backend-diagno.onrender.com', {
                     transports: ['websocket']
                 });
 
