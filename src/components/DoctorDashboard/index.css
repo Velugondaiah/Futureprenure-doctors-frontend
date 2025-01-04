@@ -1,7 +1,9 @@
 .dashboard-container {
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    background-color: #f3f4f6;
+    min-height: 100vh;
 }
 
 .dashboard-nav {
@@ -9,70 +11,157 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-nav h1 {
+.nav-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-left h1 {
     color: #1e40af;
     margin: 0;
+    font-size: 1.875rem;
+}
+
+.welcome-text {
+    color: #6b7280;
+    margin: 0;
+    font-size: 1.1rem;
 }
 
 .logout-button {
     background-color: #ef4444;
     color: white;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
     cursor: pointer;
     font-weight: 500;
+    transition: all 0.3s ease;
 }
 
 .logout-button:hover {
     background-color: #dc2626;
+    transform: translateY(-2px);
 }
 
-.dashboard-content {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.doctor-info {
-    margin-bottom: 2rem;
-}
-
-.doctor-info h2 {
-    color: #1f2937;
-    margin-bottom: 0.5rem;
-}
-
-.doctor-info p {
-    color: #6b7280;
-}
-
-.dashboard-actions {
+.dashboard-grid {
     display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
 }
 
-.dashboard-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
+.dashboard-card {
+    background-color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.dashboard-card h2 {
+    color: #1f2937;
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+}
+
+.dashboard-card p {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+.card-button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
     background-color: #3b82f6;
     color: white;
     text-decoration: none;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: background-color 0.2s;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
 }
 
-.dashboard-link:hover {
+.card-button:hover {
     background-color: #2563eb;
+    transform: translateX(5px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1e40af;
+}
+
+.stat-label {
+    display: block;
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.schedule-item:hover {
+    background-color: #f1f5f9;
+    transform: translateX(5px);
+}
+
+.time {
+    color: #1e40af;
+    font-weight: 500;
+}
+
+.patient {
+    color: #1f2937;
+}
+
+.type {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    background-color: #dbeafe;
+    color: #1e40af;
 }
 
 .loading {
@@ -82,4 +171,14 @@
     height: 100vh;
     font-size: 1.25rem;
     color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 } 

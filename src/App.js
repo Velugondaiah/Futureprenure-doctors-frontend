@@ -58,15 +58,7 @@ const App = () => {
           }
         />
 
-        <Route exact path="/doctor/video-room/:meeting_id" 
-          render={props => 
-            isAuthenticated() ? (
-              <VideoRoom {...props} />
-            ) : (
-              <Redirect to="/doctor-login" />
-            )
-          }
-        />
+        <Route path="/doctor/video-room/:meeting_id" component={VideoRoom} />
 
         {/* 404 route */}
         <Route path="*">
