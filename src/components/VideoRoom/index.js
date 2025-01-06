@@ -1,54 +1,75 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import Cookies from 'js-cookie';
-import './index.css';
 import io from 'socket.io-client';
+import './index.css';
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaNotesMedical } from 'react-icons/fa';
 
 const VideoRoom = () => {
-    // Get meeting ID and history
     const { meeting_id } = useParams();
     const history = useHistory();
 
-    // State
+    // Refs
+    const localVideoRef = useRef(null);
+    const remoteVideoRef = useRef(null);
+    const socketRef = useRef(null);
+    const peerConnectionRef = useRef(null);
+
+    // State variables
     const [error, setError] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [localStream, setLocalStream] = useState(null);
-    const peerConnectionRef = useRef(null);
-    const socketRef = useRef(null);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isVideoOff, setIsVideoOff] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState('Waiting for patient...');
 
-    // Refs for video elements
-    const localVideoRef = useRef(null);
-    const remoteVideoRef = useRef(null);
+    // Control functions
+    const toggleMute = () => {
+        if (localStream) {
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsMuted(!isMuted);
+        }
+    };
+
+    const toggleVideo = () => {
+        if (localStream) {
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsVideoOff(!isVideoOff);
+        }
+    };
 
     const handleEndCall = () => {
-        // Stop all tracks
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
         }
-        
-        // Redirect based on user type
-        const isDoctor = window.location.pathname.includes('/doctor/');
-        history.push(isDoctor ? '/doctor-booking-history' : '/booking-history');
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+        }
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+        history.push('/doctor-booking-history');
     };
 
+    // WebRTC initialization
     useEffect(() => {
-        let stream = null;
-
-        const init = async () => {
+        const initializeWebRTC = async () => {
             try {
-                // 1. Get local media stream
-                stream = await navigator.mediaDevices.getUserMedia({
+                // Get local media stream
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
                 
-                console.log('Doctor: Local stream obtained');
                 setLocalStream(stream);
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // 2. Create peer connection
+                // Create peer connection
                 const pc = new RTCPeerConnection({
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -60,82 +81,79 @@ const VideoRoom = () => {
                     ]
                 });
 
-                // Add local stream tracks to peer connection
+                peerConnectionRef.current = pc;
+
+                // Add tracks to peer connection
                 stream.getTracks().forEach(track => {
-                    console.log('Doctor: Adding track to peer connection');
                     pc.addTrack(track, stream);
                 });
 
                 // Handle incoming stream
                 pc.ontrack = (event) => {
-                    console.log('Doctor: Received remote track');
                     if (remoteVideoRef.current && event.streams[0]) {
                         remoteVideoRef.current.srcObject = event.streams[0];
+                        setIsConnected(true);
+                        setConnectionStatus('Connected');
                     }
                 };
+
+                // Set up socket connection
+                const socket = io('https://backend-diagno.onrender.com', {
+                    transports: ['websocket']
+                });
+
+                socketRef.current = socket;
+
+                socket.on('connect', () => {
+                    console.log('Connected to socket server');
+                    socket.emit('join-room', { meeting_id, isDoctor: true });
+                });
+
+                // Handle socket events
+                socket.on('offer', async (offer) => {
+                    try {
+                        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                        const answer = await pc.createAnswer();
+                        await pc.setLocalDescription(answer);
+                        socket.emit('answer', { answer, meeting_id });
+                    } catch (err) {
+                        console.error('Error handling offer:', err);
+                    }
+                });
+
+                socket.on('ice-candidate', async (candidate) => {
+                    try {
+                        if (pc.remoteDescription) {
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        }
+                    } catch (err) {
+                        console.error('Error adding ICE candidate:', err);
+                    }
+                });
 
                 // ICE candidate handling
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
-                        console.log('Doctor: Sending ICE candidate');
-                        socketRef.current.emit('ice-candidate', {
+                        socket.emit('ice-candidate', {
                             candidate: event.candidate,
                             meeting_id
                         });
                     }
                 };
 
-                pc.oniceconnectionstatechange = () => {
-                    console.log('Doctor ICE Connection State:', pc.iceConnectionState);
-                };
-
-                peerConnectionRef.current = pc;
-
-                // 3. Set up socket connection
-                socketRef.current = io('https://backend-diagno.onrender.com', {
-                    transports: ['websocket']
-                });
-
-                socketRef.current.on('connect', () => {
-                    console.log('Doctor: Socket connected');
-                    socketRef.current.emit('join-room', { meeting_id, isDoctor: true });
-                });
-
-                socketRef.current.on('offer', async (offer) => {
-                    console.log('Doctor: Received offer');
-                    try {
-                        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        console.log('Doctor: Sending answer');
-                        socketRef.current.emit('answer', { answer, meeting_id });
-                    } catch (err) {
-                        console.error('Doctor: Error handling offer:', err);
-                    }
-                });
-
-                socketRef.current.on('ice-candidate', async (candidate) => {
-                    try {
-                        if (pc.remoteDescription) {
-                            console.log('Doctor: Adding ICE candidate');
-                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                        }
-                    } catch (err) {
-                        console.error('Doctor: Error adding ICE candidate:', err);
-                    }
-                });
-
+                return stream;
             } catch (err) {
-                console.error('Doctor: Error initializing:', err);
+                console.error('Error initializing WebRTC:', err);
                 setError(err.message);
+                return null;
             }
         };
 
-        init();
+        initializeWebRTC();
 
         return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
             }
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close();
@@ -146,43 +164,115 @@ const VideoRoom = () => {
         };
     }, [meeting_id]);
 
+    // Error state JSX
+    if (error) {
+        return (
+            <div className="video-room error-state">
+                <div className="error-container">
+                    <h2>Connection Error</h2>
+                    <p>{error}</p>
+                    <button onClick={handleEndCall}>
+                        Return to Appointments
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Main component JSX
     return (
         <div className="video-room">
-            <div className="video-container">
-                <video
-                    ref={localVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="local-video"
-                />
-                <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="remote-video"
-                />
-                {!isConnected && (
-                    <div className="connecting-message">
-                        Waiting for other participant to join...
-                    </div>
-                )}
-            </div>
-            <div className="controls">
-                <button onClick={handleEndCall} className="end-call">
-                    End Call
-                </button>
-            </div>
-            {error && (
-                <div className="error-overlay">
-                    <div className="error-message">
-                        {error}
-                        <button onClick={handleEndCall}>
-                            Return to Appointments
-                        </button>
+            <div className="consultation-header">
+                <div className="consultation-info">
+                    <h2>Patient Consultation</h2>
+                    <div className="consultation-status">
+                        <div className={`status-indicator ${isConnected ? 'connected' : ''}`}></div>
+                        <span>{connectionStatus}</span>
                     </div>
                 </div>
-            )}
+                <div className="meeting-details">
+                    <span>Meeting ID: {meeting_id}</span>
+                </div>
+            </div>
+
+            <div className="consultation-content">
+                <div className="video-container">
+                    <div className="main-video-wrapper">
+                        <video
+                            ref={remoteVideoRef}
+                            autoPlay
+                            playsInline
+                            className="remote-video"
+                        />
+                        <div className="local-video-container">
+                            <video
+                                ref={localVideoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="local-video"
+                            />
+                        </div>
+                        {!isConnected && (
+                            <div className="connecting-overlay">
+                                <div className="connecting-message">
+                                    Waiting for patient to join...
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="consultation-sidebar">
+                    <div className="patient-info">
+                        <h3>Patient Information</h3>
+                        <div className="patient-details">
+                            {/* Add patient details here */}
+                        </div>
+                    </div>
+                    <div className="consultation-notes">
+                        <div className="notes-header">
+                            <h3>Consultation Notes</h3>
+                            <button className="save-notes">Save</button>
+                        </div>
+                        <div className="notes-content">
+                            {/* Add notes editor here */}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="controls">
+                <div className="control-group">
+                    <button 
+                        className={`control-button ${isMuted ? 'active' : ''}`}
+                        onClick={toggleMute}
+                    >
+                        {isMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                    </button>
+                    <button 
+                        className={`control-button ${isVideoOff ? 'active' : ''}`}
+                        onClick={toggleVideo}
+                    >
+                        {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
+                    </button>
+                </div>
+                
+                <div className="control-group">
+                    <button 
+                        className="control-button notes-button"
+                        onClick={() => {/* Add notes functionality */}}
+                    >
+                        <FaNotesMedical />
+                    </button>
+                    <button 
+                        className="control-button end-call"
+                        onClick={handleEndCall}
+                    >
+                        <FaPhone style={{ transform: 'rotate(135deg)' }} />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

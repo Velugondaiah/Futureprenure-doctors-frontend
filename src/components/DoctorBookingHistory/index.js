@@ -7,6 +7,9 @@ const DoctorBookingHistory = () => {
     const [appointments, setAppointments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [prescription, setPrescription] = useState('');
+    const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
     const history = useHistory();
 
     useEffect(() => {
@@ -105,6 +108,90 @@ const DoctorBookingHistory = () => {
         }
     };
 
+    const handlePrescriptionSubmit = async () => {
+        try {
+            const response = await fetch(
+                `https://backend-diagno.onrender.com/api/appointments/${selectedAppointment.id}/prescription`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${Cookies.get('jwt_token')}`
+                    },
+                    body: JSON.stringify({ prescription })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to update prescription');
+            }
+
+            // Update local state
+            setAppointments(appointments.map(apt => 
+                apt.id === selectedAppointment.id 
+                    ? { ...apt, prescription, status: 'Completed' }
+                    : apt
+            ));
+
+            // Close modal and reset states
+            setShowPrescriptionModal(false);
+            setSelectedAppointment(null);
+            setPrescription('');
+
+        } catch (error) {
+            console.error('Error updating prescription:', error);
+            setError('Failed to update prescription');
+        }
+    };
+
+    const openPrescriptionModal = (appointment) => {
+        setSelectedAppointment(appointment);
+        setPrescription(appointment.prescription || '');
+        setShowPrescriptionModal(true);
+    };
+
+    const renderPrescriptionModal = () => {
+        if (!showPrescriptionModal) return null;
+
+        return (
+            <div className="modal-overlay">
+                <div className="prescription-modal">
+                    <h2>Add Prescription</h2>
+                    <p>Patient: {selectedAppointment?.patient_name}</p>
+                    <p>Date: {new Date(selectedAppointment?.date).toLocaleDateString()}</p>
+                    
+                    <textarea
+                        value={prescription}
+                        onChange={(e) => setPrescription(e.target.value)}
+                        placeholder="Enter prescription details..."
+                        rows="6"
+                        className="prescription-textarea"
+                    />
+                    
+                    <div className="modal-buttons">
+                        <button 
+                            onClick={handlePrescriptionSubmit}
+                            className="save-button"
+                            disabled={!prescription.trim()}
+                        >
+                            Save Prescription
+                        </button>
+                        <button 
+                            onClick={() => {
+                                setShowPrescriptionModal(false);
+                                setSelectedAppointment(null);
+                                setPrescription('');
+                            }}
+                            className="cancel-button"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="doctor-appointments-container">
             <h1>My Appointments</h1>
@@ -135,6 +222,7 @@ const DoctorBookingHistory = () => {
                                 <th>Time</th>
                                 <th>Mode</th>
                                 <th>Status/Action</th>
+                                <th>Prescription</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -151,12 +239,21 @@ const DoctorBookingHistory = () => {
                                     <td className="action-cell">
                                         {renderAppointmentAction(appointment)}
                                     </td>
+                                    <td>
+                                        <button
+                                            onClick={() => openPrescriptionModal(appointment)}
+                                            className="prescription-button"
+                                        >
+                                            {appointment.prescription ? 'Edit Prescription' : 'Add Prescription'}
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             )}
+            {renderPrescriptionModal()}
         </div>
     );
 };
