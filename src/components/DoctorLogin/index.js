@@ -12,17 +12,14 @@ const DoctorLogin = () => {
     const onSubmitForm = async (event) => {
         event.preventDefault();
         
-        // Prevent multiple submissions
         if (isLoading) {
             return;
         }
- 
+
         setIsLoading(true);
         setErrorMsg('');
 
         try {
-            console.log('Attempting to connect to:', 'http://localhost:3009/doctor-login'); // Debug log
-            
             const response = await fetch('https://backend-diagno.onrender.com/doctor-login', {
                 method: 'POST',
                 headers: {
@@ -76,7 +73,7 @@ const DoctorLogin = () => {
         } catch (error) {
             console.error('Login error:', error);
             if (error.message === 'Failed to fetch') {
-                setErrorMsg('Unable to connect to server. Please check if the server is running on port 3009');
+                setErrorMsg('Unable to connect to server. Please try again later.');
             } else {
                 setErrorMsg(error.message || 'An error occurred during login');
             }
