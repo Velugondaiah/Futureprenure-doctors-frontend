@@ -17,7 +17,7 @@ const UserLogin = () => {
         try {
             console.log('Attempting to connect to:', 'https://backend-diagno.onrender.com/login');
             
-            const response = await fetch('https://backend-diagno.onrender.com/login', {
+            const response = await fetch('https://backend-diagno.onrender.com/doctor-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
