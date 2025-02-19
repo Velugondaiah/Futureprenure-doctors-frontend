@@ -35,31 +35,32 @@ const DoctorBookingHistory = () => {
                 throw new Error('Doctor details not found');
             }
 
-            console.log('Fetching appointments for doctor:', doctorDetails.id);
+            console.log('Attempting to fetch appointments for doctor:', doctorDetails.id);
 
             const response = await fetch(
-                `https://backend-diagno.onrender.com/api/doctor-appointments/${doctorDetails.id}`,
+                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
                 {
+                    method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${Cookies.get('jwt_token')}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${Cookies.get('jwt_token')}`
                     }
                 }
             );
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to fetch appointments');
+                throw new Error(errorData.error || 'Failed to fetch appointments');
             }
 
             const data = await response.json();
-            console.log('Fetched appointments:', data);
+            console.log('Successfully fetched appointments:', data);
             setAppointments(Array.isArray(data) ? data : []);
             setError(null);
 
         } catch (error) {
-            console.error('Error fetching appointments:', error);
-            setError(error.message);
+            console.error('Error in fetchAppointments:', error);
+            setError('Failed to fetch appointments. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -111,7 +112,7 @@ const DoctorBookingHistory = () => {
     const handlePrescriptionSubmit = async () => {
         try {
             const response = await fetch(
-                `https://backend-diagno.onrender.com/api/appointments/${selectedAppointment.id}/prescription`,
+                `http://localhost:3009/api/appointments/${selectedAppointment.id}/prescription`,
                 {
                     method: 'POST',
                     headers: {

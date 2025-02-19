@@ -20,31 +20,22 @@ const DoctorLogin = () => {
         setErrorMsg('');
 
         try {
-            const response = await fetch('https://backend-diagno.onrender.com/doctor-login', {
+            const response = await fetch('http://localhost:3009/api/doctor-login', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ 
                     username, 
                     password 
-                }),
-                credentials: 'include'
+                })
             });
 
-            console.log('Response received:', response.status); // Debug log
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
+            console.log('Response status:', response.status);
             const data = await response.json();
-            console.log(data.doctor)
-            console.log('Login successful:', data); // Debug log
-            
-            if (data.jwt_token) {
+            console.log('Response data:', data);
+
+            if (response.ok && data.jwt_token) {
                 // Store the JWT token
                 Cookies.set('jwt_token', data.jwt_token, { expires: 30 });
                 
@@ -68,15 +59,11 @@ const DoctorLogin = () => {
                 // Redirect to dashboard
                 history.push('/doctor-dashboard');
             } else {
-                setErrorMsg(data.error || 'Invalid username or password');
+                setErrorMsg(data.error || 'Login failed');
             }
         } catch (error) {
             console.error('Login error:', error);
-            if (error.message === 'Failed to fetch') {
-                setErrorMsg('Unable to connect to server. Please try again later.');
-            } else {
-                setErrorMsg(error.message || 'An error occurred during login');
-            }
+            setErrorMsg('Connection error. Please try again.');
         } finally {
             setIsLoading(false);
         }

@@ -3,73 +3,41 @@ import { useParams, useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import './index.css';
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaNotesMedical } from 'react-icons/fa';
+import Cookies from 'js-cookie';
 
 const VideoRoom = () => {
     const { meeting_id } = useParams();
     const history = useHistory();
 
-    // Refs
+    // Refs for maintaining connections
     const localVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
     const socketRef = useRef(null);
     const peerConnectionRef = useRef(null);
+    const localStreamRef = useRef(null);
 
     // State variables
     const [error, setError] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
-    const [localStream, setLocalStream] = useState(null);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('Waiting for patient...');
 
-    // Control functions
-    const toggleMute = () => {
-        if (localStream) {
-            localStream.getAudioTracks().forEach(track => {
-                track.enabled = !track.enabled;
-            });
-            setIsMuted(!isMuted);
-        }
-    };
-
-    const toggleVideo = () => {
-        if (localStream) {
-            localStream.getVideoTracks().forEach(track => {
-                track.enabled = !track.enabled;
-            });
-            setIsVideoOff(!isVideoOff);
-        }
-    };
-
-    const handleEndCall = () => {
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-        if (peerConnectionRef.current) {
-            peerConnectionRef.current.close();
-        }
-        if (socketRef.current) {
-            socketRef.current.disconnect();
-        }
-        history.push('/doctor-booking-history');
-    };
-
-    // WebRTC initialization
     useEffect(() => {
-        const initializeWebRTC = async () => {
+        const initializeConnection = async () => {
             try {
-                // Get local media stream
+                // 1. Get local media stream
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
                 
-                setLocalStream(stream);
+                localStreamRef.current = stream;
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // Create peer connection
+                // 2. Create and configure peer connection
                 const pc = new RTCPeerConnection({
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
@@ -80,8 +48,6 @@ const VideoRoom = () => {
                         }
                     ]
                 });
-
-                peerConnectionRef.current = pc;
 
                 // Add tracks to peer connection
                 stream.getTracks().forEach(track => {
@@ -97,19 +63,41 @@ const VideoRoom = () => {
                     }
                 };
 
-                // Set up socket connection
-                const socket = io('https://backend-diagno.onrender.com', {
-                    transports: ['websocket']
+                // 3. Set up Socket.IO connection
+                const socket = io('http://localhost:3009', {
+                    transports: ['websocket'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    timeout: 10000,
+                    auth: {
+                        token: Cookies.get('jwt_token')
+                    }
                 });
 
-                socketRef.current = socket;
-
                 socket.on('connect', () => {
-                    console.log('Connected to socket server');
+                    console.log('Connected to socket server with ID:', socket.id);
+                    setConnectionStatus('Connected to server');
                     socket.emit('join-room', { meeting_id, isDoctor: true });
                 });
 
-                // Handle socket events
+                socket.on('connect_error', (error) => {
+                    console.error('Socket connection error:', error);
+                    setConnectionStatus('Connection error, retrying...');
+                });
+
+                socket.on('joined-room', (response) => {
+                    if (response.success) {
+                        console.log('Successfully joined room:', response.meeting_id);
+                        setConnectionStatus('Waiting for patient...');
+                    }
+                });
+
+                socket.on('disconnect', (reason) => {
+                    console.log('Socket disconnected:', reason);
+                    setConnectionStatus('Disconnected, attempting to reconnect...');
+                });
+
                 socket.on('offer', async (offer) => {
                     try {
                         await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -118,6 +106,7 @@ const VideoRoom = () => {
                         socket.emit('answer', { answer, meeting_id });
                     } catch (err) {
                         console.error('Error handling offer:', err);
+                        setError('Failed to establish connection');
                     }
                 });
 
@@ -141,19 +130,23 @@ const VideoRoom = () => {
                     }
                 };
 
-                return stream;
+                // Store references
+                socketRef.current = socket;
+                peerConnectionRef.current = pc;
+
             } catch (err) {
-                console.error('Error initializing WebRTC:', err);
+                console.error('Failed to initialize:', err);
                 setError(err.message);
-                return null;
             }
         };
 
-        initializeWebRTC();
+        initializeConnection();
 
+        // Cleanup function
         return () => {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
+            console.log('Cleaning up VideoRoom component...');
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
             }
             if (peerConnectionRef.current) {
                 peerConnectionRef.current.close();
@@ -163,6 +156,38 @@ const VideoRoom = () => {
             }
         };
     }, [meeting_id]);
+
+    // Control functions
+    const toggleMute = () => {
+        if (localStreamRef.current) {
+            localStreamRef.current.getAudioTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsMuted(!isMuted);
+        }
+    };
+
+    const toggleVideo = () => {
+        if (localStreamRef.current) {
+            localStreamRef.current.getVideoTracks().forEach(track => {
+                track.enabled = !track.enabled;
+            });
+            setIsVideoOff(!isVideoOff);
+        }
+    };
+
+    const handleEndCall = () => {
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+        if (peerConnectionRef.current) {
+            peerConnectionRef.current.close();
+        }
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+        history.push('/doctor-booking-history');
+    };
 
     // Error state JSX
     if (error) {
