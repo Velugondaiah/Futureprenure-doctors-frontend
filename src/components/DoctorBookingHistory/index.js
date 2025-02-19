@@ -11,7 +11,7 @@ const DoctorBookingHistory = () => {
     const [prescription, setPrescription] = useState('');
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
     const history = useHistory();
-
+///
     useEffect(() => {
         // Check if doctor is logged in
         const doctorDetails = localStorage.getItem('doctorDetails');
