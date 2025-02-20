@@ -20,7 +20,7 @@ const DoctorLogin = () => {
         setErrorMsg('');
 
         try {
-            const response = await fetch('http://localhost:3009/api/doctor-login', {
+            const response = await fetch('https://backend-diagno-1.onrender.com/api/doctor-login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

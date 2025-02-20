@@ -38,7 +38,7 @@ const DoctorBookingHistory = () => {
             console.log('Attempting to fetch appointments for doctor:', doctorDetails.id);
 
             const response = await fetch(
-                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
+                `https://backend-diagno-1.onrender.com/api/doctor-appointments/${doctorDetails.id}`,
                 {
                     method: 'GET',
                     headers: {
@@ -112,7 +112,7 @@ const DoctorBookingHistory = () => {
     const handlePrescriptionSubmit = async () => {
         try {
             const response = await fetch(
-                `http://localhost:3009/api/appointments/${selectedAppointment.id}/prescription`,
+                `https://backend-diagno-1.onrender.com/api/appointments/${selectedAppointment.id}/prescription`,
                 {
                     method: 'POST',
                     headers: {

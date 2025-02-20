@@ -64,7 +64,7 @@ const VideoRoom = () => {
                 };
 
                 // 3. Set up Socket.IO connection
-                const socket = io('http://localhost:3009', {
+                const socket = io('https://backend-diagno-1.onrender.com', {
                     transports: ['websocket'],
                     reconnection: true,
                     reconnectionAttempts: 5,
