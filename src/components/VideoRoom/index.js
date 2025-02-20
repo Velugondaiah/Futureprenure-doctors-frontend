@@ -21,130 +21,140 @@ const VideoRoom = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
-    const [connectionStatus, setConnectionStatus] = useState('Waiting for patient...');
+    const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+
+    const createPeerConnection = () => {
+        console.log('Doctor: Creating peer connection');
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                {
+                    urls: 'turn:numb.viagenie.ca',
+                    username: 'webrtc@live.com',
+                    credential: 'muazkh'
+                }
+            ]
+        });
+
+        // Add local stream tracks to peer connection
+        if (localStreamRef.current) {
+            console.log('Doctor: Adding local tracks to peer connection');
+            localStreamRef.current.getTracks().forEach(track => {
+                pc.addTrack(track, localStreamRef.current);
+            });
+        }
+
+        pc.ontrack = (event) => {
+            console.log('Doctor: Received remote track');
+            if (remoteVideoRef.current && event.streams[0]) {
+                console.log('Doctor: Setting remote video stream');
+                remoteVideoRef.current.srcObject = event.streams[0];
+                setIsConnected(true);
+                setConnectionStatus('Connected');
+            }
+        };
+
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log('Doctor: Sending ICE candidate');
+                socketRef.current.emit('ice-candidate', {
+                    candidate: event.candidate,
+                    meeting_id
+                });
+            }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+            console.log('Doctor ICE connection state:', pc.iceConnectionState);
+        };
+
+        pc.onconnectionstatechange = () => {
+            console.log('Doctor connection state:', pc.connectionState);
+        };
+
+        return pc;
+    };
 
     useEffect(() => {
-        const initializeConnection = async () => {
+        const init = async () => {
             try {
-                // 1. Get local media stream
+                console.log('Doctor: Initializing media stream');
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
-                
                 localStreamRef.current = stream;
                 if (localVideoRef.current) {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                // 2. Create and configure peer connection
-                const pc = new RTCPeerConnection({
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        {
-                            urls: 'turn:numb.viagenie.ca',
-                            username: 'webrtc@live.com',
-                            credential: 'muazkh'
-                        }
-                    ]
+                socketRef.current = io('https://backend-diagno-1.onrender.com');
+
+                socketRef.current.on('connect', () => {
+                    console.log('Doctor: Socket connected');
+                    socketRef.current.emit('join-room', {
+                        meeting_id,
+                        role: 'Doctor'
+                    });
                 });
 
-                // Add tracks to peer connection
-                stream.getTracks().forEach(track => {
-                    pc.addTrack(track, stream);
-                });
-
-                // Handle incoming stream
-                pc.ontrack = (event) => {
-                    if (remoteVideoRef.current && event.streams[0]) {
-                        remoteVideoRef.current.srcObject = event.streams[0];
-                        setIsConnected(true);
-                        setConnectionStatus('Connected');
+                socketRef.current.on('start-call', async () => {
+                    console.log('Doctor: Starting call');
+                    if (!peerConnectionRef.current) {
+                        peerConnectionRef.current = createPeerConnection();
                     }
-                };
 
-                // 3. Set up Socket.IO connection
-                const socket = io('https://backend-diagno-1.onrender.com', {
-                    transports: ['websocket'],
-                    reconnection: true,
-                    reconnectionAttempts: 5,
-                    reconnectionDelay: 1000,
-                    timeout: 10000,
-                    auth: {
-                        token: Cookies.get('jwt_token')
-                    }
-                });
-
-                socket.on('connect', () => {
-                    console.log('Connected to socket server with ID:', socket.id);
-                    setConnectionStatus('Connected to server');
-                    socket.emit('join-room', { meeting_id, isDoctor: true });
-                });
-
-                socket.on('connect_error', (error) => {
-                    console.error('Socket connection error:', error);
-                    setConnectionStatus('Connection error, retrying...');
-                });
-
-                socket.on('joined-room', (response) => {
-                    if (response.success) {
-                        console.log('Successfully joined room:', response.meeting_id);
-                        setConnectionStatus('Waiting for patient...');
-                    }
-                });
-
-                socket.on('disconnect', (reason) => {
-                    console.log('Socket disconnected:', reason);
-                    setConnectionStatus('Disconnected, attempting to reconnect...');
-                });
-
-                socket.on('offer', async (offer) => {
                     try {
-                        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        socket.emit('answer', { answer, meeting_id });
-                    } catch (err) {
-                        console.error('Error handling offer:', err);
-                        setError('Failed to establish connection');
-                    }
-                });
-
-                socket.on('ice-candidate', async (candidate) => {
-                    try {
-                        if (pc.remoteDescription) {
-                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                        }
-                    } catch (err) {
-                        console.error('Error adding ICE candidate:', err);
-                    }
-                });
-
-                // ICE candidate handling
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', {
-                            candidate: event.candidate,
+                        const offer = await peerConnectionRef.current.createOffer();
+                        await peerConnectionRef.current.setLocalDescription(offer);
+                        
+                        console.log('Doctor: Sending offer');
+                        socketRef.current.emit('offer', {
+                            offer,
                             meeting_id
                         });
+                    } catch (err) {
+                        console.error('Doctor: Error creating offer:', err);
                     }
-                };
+                });
 
-                // Store references
-                socketRef.current = socket;
-                peerConnectionRef.current = pc;
+                socketRef.current.on('answer', async ({ answer }) => {
+                    console.log('Doctor: Received answer');
+                    if (peerConnectionRef.current) {
+                        try {
+                            await peerConnectionRef.current.setRemoteDescription(
+                                new RTCSessionDescription(answer)
+                            );
+                            console.log('Doctor: Set remote description success');
+                        } catch (err) {
+                            console.error('Doctor: Error setting remote description:', err);
+                        }
+                    }
+                });
+
+                socketRef.current.on('ice-candidate', async ({ candidate }) => {
+                    console.log('Doctor: Received ICE candidate');
+                    if (peerConnectionRef.current) {
+                        try {
+                            await peerConnectionRef.current.addIceCandidate(
+                                new RTCIceCandidate(candidate)
+                            );
+                            console.log('Doctor: Added ICE candidate success');
+                        } catch (err) {
+                            console.error('Doctor: Error adding ICE candidate:', err);
+                        }
+                    }
+                });
 
             } catch (err) {
-                console.error('Failed to initialize:', err);
+                console.error('Doctor: Initialization error:', err);
                 setError(err.message);
             }
         };
 
-        initializeConnection();
+        init();
 
-        // Cleanup function
         return () => {
-            console.log('Cleaning up VideoRoom component...');
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
