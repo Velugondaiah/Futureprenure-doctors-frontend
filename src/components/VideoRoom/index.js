@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import io from 'socket.io-client';
 import './index.css';
-import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaNotesMedical } from 'react-icons/fa';
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaNotesMedical, FaThermometer } from 'react-icons/fa';
 import Cookies from 'js-cookie';
 
 const VideoRoom = () => {
@@ -22,6 +22,11 @@ const VideoRoom = () => {
     const [isMuted, setIsMuted] = useState(false);
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+    const [appointmentDetails, setAppointmentDetails] = useState({
+        temperature: null,
+        patient_name: '',
+        // ... other appointment details
+    });
 
     const createPeerConnection = () => {
         console.log('Doctor: Creating peer connection');
@@ -167,6 +172,28 @@ const VideoRoom = () => {
         };
     }, [meeting_id]);
 
+    useEffect(() => {
+        const fetchAppointmentDetails = async () => {
+            try {
+                const response = await fetch(`https://backend-diagno-1.onrender.com/api/appointments/${meeting_id}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch appointment details');
+                }
+                const data = await response.json();
+                console.log('Fetched appointment details:', data); // Debug log
+                setAppointmentDetails(data);
+            } catch (err) {
+                console.error('Error fetching appointment details:', err);
+            }
+        };
+
+        fetchAppointmentDetails();
+        // Set up an interval to periodically fetch updates
+        const intervalId = setInterval(fetchAppointmentDetails, 10000); // Fetch every 10 seconds
+
+        return () => clearInterval(intervalId); // Cleanup interval on unmount
+    }, [meeting_id]);
+
     // Control functions
     const toggleMute = () => {
         if (localStreamRef.current) {
@@ -256,13 +283,36 @@ const VideoRoom = () => {
                             </div>
                         )}
                     </div>
+                    
+                    {/* Temperature overlay */}
+                    <div className="vital-signs-overlay">
+                        <div className="temperature-display">
+                            <FaThermometer className="temp-icon" />
+                            <span>
+                                {appointmentDetails.temperature 
+                                    ? `${appointmentDetails.temperature}°C` 
+                                    : 'Temperature not recorded'}
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="consultation-sidebar">
                     <div className="patient-info">
                         <h3>Patient Information</h3>
                         <div className="patient-details">
-                            {/* Add patient details here */}
+                            <div className="vital-signs">
+                                <h4>Vital Signs</h4>
+                                <div className="vital-sign-item">
+                                    <FaThermometer />
+                                    <span>Temperature:</span>
+                                    <strong>
+                                        {appointmentDetails.temperature 
+                                            ? `${appointmentDetails.temperature}°C` 
+                                            : 'Not recorded'}
+                                    </strong>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="consultation-notes">

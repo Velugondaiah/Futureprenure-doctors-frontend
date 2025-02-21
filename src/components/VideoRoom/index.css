@@ -185,4 +185,58 @@
         height: 40px;
         font-size: 1rem;
     }
+}
+
+.vital-signs-overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+}
+
+.temperature-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.temp-icon {
+    color: #ff6b6b;
+}
+
+.vital-signs {
+    margin-top: 15px;
+    padding: 15px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.vital-signs h4 {
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.vital-sign-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.vital-sign-item svg {
+    color: #4299e1;
+}
+
+.vital-sign-item strong {
+    margin-left: auto;
+    color: #2d3748;
 } 
