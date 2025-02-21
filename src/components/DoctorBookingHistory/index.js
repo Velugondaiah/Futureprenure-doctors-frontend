@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import './index.css';
+import { FaClipboardList } from 'react-icons/fa';
 
 const DoctorBookingHistory = () => {
     const [appointments, setAppointments] = useState([]);
@@ -10,6 +11,9 @@ const DoctorBookingHistory = () => {
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [prescription, setPrescription] = useState('');
     const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+    const [availableTests, setAvailableTests] = useState([]);
+    const [selectedTests, setSelectedTests] = useState([]);
+    const [testsError, setTestsError] = useState(null);
     const history = useHistory();
 ///
     useEffect(() => {
@@ -25,7 +29,10 @@ const DoctorBookingHistory = () => {
 
         fetchAppointments();
         const interval = setInterval(fetchAppointments, 60000);
-        return () => clearInterval(interval);
+        fetchDiagnosisTests();
+        return () => {
+            clearInterval(interval);
+        };
     }, [history]);
 
     const fetchAppointments = async () => {
@@ -63,6 +70,40 @@ const DoctorBookingHistory = () => {
             setError('Failed to fetch appointments. Please try again.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchDiagnosisTests = async () => {
+        try {
+            console.log('Fetching diagnosis tests...');
+            const response = await fetch('https://backend-diagno-1.onrender.com/api/diagnosis-tests', {
+                headers: {
+                    'Authorization': `Bearer ${Cookies.get('jwt_token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const tests = await response.json();
+            console.log('Received tests:', tests);
+
+            if (!Array.isArray(tests)) {
+                throw new Error('Received invalid tests data');
+            }
+
+            if (tests.length === 0) {
+                setTestsError('No diagnosis tests found in the database');
+            } else {
+                setAvailableTests(tests);
+                setTestsError(null);
+            }
+        } catch (error) {
+            console.error('Error fetching diagnosis tests:', error);
+            setTestsError('Failed to fetch diagnosis tests');
+            setAvailableTests([]);
         }
     };
 
@@ -119,78 +160,39 @@ const DoctorBookingHistory = () => {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${Cookies.get('jwt_token')}`
                     },
-                    body: JSON.stringify({ prescription })
+                    body: JSON.stringify({ 
+                        prescription,
+                        diagnosis_tests: selectedTests 
+                    })
                 }
             );
 
             if (!response.ok) {
-                throw new Error('Failed to update prescription');
+                throw new Error('Failed to update prescription and tests');
             }
 
             // Update local state
             setAppointments(appointments.map(apt => 
                 apt.id === selectedAppointment.id 
-                    ? { ...apt, prescription, status: 'Completed' }
+                    ? { 
+                        ...apt, 
+                        prescription, 
+                        diagnosis_tests: selectedTests,
+                        status: 'Completed' 
+                    }
                     : apt
             ));
 
-            // Close modal and reset states
+            // Reset states and close modal
             setShowPrescriptionModal(false);
             setSelectedAppointment(null);
             setPrescription('');
+            setSelectedTests([]);
 
         } catch (error) {
             console.error('Error updating prescription:', error);
-            setError('Failed to update prescription');
+            setError('Failed to update prescription and tests');
         }
-    };
-
-    const openPrescriptionModal = (appointment) => {
-        setSelectedAppointment(appointment);
-        setPrescription(appointment.prescription || '');
-        setShowPrescriptionModal(true);
-    };
-
-    const renderPrescriptionModal = () => {
-        if (!showPrescriptionModal) return null;
-
-        return (
-            <div className="modal-overlay">
-                <div className="prescription-modal">
-                    <h2>Add Prescription</h2>
-                    <p>Patient: {selectedAppointment?.patient_name}</p>
-                    <p>Date: {new Date(selectedAppointment?.date).toLocaleDateString()}</p>
-                    
-                    <textarea
-                        value={prescription}
-                        onChange={(e) => setPrescription(e.target.value)}
-                        placeholder="Enter prescription details..."
-                        rows="6"
-                        className="prescription-textarea"
-                    />
-                    
-                    <div className="modal-buttons">
-                        <button 
-                            onClick={handlePrescriptionSubmit}
-                            className="save-button"
-                            disabled={!prescription.trim()}
-                        >
-                            Save Prescription
-                        </button>
-                        <button 
-                            onClick={() => {
-                                setShowPrescriptionModal(false);
-                                setSelectedAppointment(null);
-                                setPrescription('');
-                            }}
-                            className="cancel-button"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
     };
 
     return (
@@ -242,9 +244,15 @@ const DoctorBookingHistory = () => {
                                     </td>
                                     <td>
                                         <button
-                                            onClick={() => openPrescriptionModal(appointment)}
+                                            onClick={() => {
+                                                setSelectedAppointment(appointment);
+                                                setPrescription(appointment.prescription || '');
+                                                setSelectedTests(appointment.diagnosis_tests || []);
+                                                setShowPrescriptionModal(true);
+                                            }}
                                             className="prescription-button"
                                         >
+                                            <FaClipboardList />
                                             {appointment.prescription ? 'Edit Prescription' : 'Add Prescription'}
                                         </button>
                                     </td>
@@ -254,7 +262,77 @@ const DoctorBookingHistory = () => {
                     </table>
                 </div>
             )}
-            {renderPrescriptionModal()}
+
+            {/* Prescription Modal */}
+            {showPrescriptionModal && (
+                <div className="modal-overlay">
+                    <div className="prescription-modal">
+                        <h2>Add Prescription & Diagnosis Tests</h2>
+                        <p>Patient: {selectedAppointment?.patient_name}</p>
+                        <p>Date: {new Date(selectedAppointment?.date).toLocaleDateString()}</p>
+                        
+                        <div className="prescription-section">
+                            <h3>Prescription</h3>
+                            <textarea
+                                value={prescription}
+                                onChange={(e) => setPrescription(e.target.value)}
+                                placeholder="Enter prescription details..."
+                                rows="6"
+                                className="prescription-textarea"
+                            />
+                        </div>
+
+                        <div className="diagnosis-tests-section">
+                            <h3>Diagnosis Tests</h3>
+                            {testsError ? (
+                                <div className="error-message">{testsError}</div>
+                            ) : availableTests.length === 0 ? (
+                                <div className="no-tests-message">No diagnosis tests available</div>
+                            ) : (
+                                <div className="tests-grid">
+                                    {availableTests.map((test, index) => (
+                                        <label key={`${test}-${index}`} className="test-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTests.includes(test)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedTests([...selectedTests, test]);
+                                                    } else {
+                                                        setSelectedTests(selectedTests.filter(t => t !== test));
+                                                    }
+                                                }}
+                                            />
+                                            <span>{test}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="modal-buttons">
+                            <button 
+                                onClick={handlePrescriptionSubmit}
+                                className="save-button"
+                                disabled={!prescription.trim() && selectedTests.length === 0}
+                            >
+                                Save Changes
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setShowPrescriptionModal(false);
+                                    setSelectedAppointment(null);
+                                    setPrescription('');
+                                    setSelectedTests([]);
+                                }}
+                                className="cancel-button"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
