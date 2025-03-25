@@ -45,7 +45,7 @@ const DoctorBookingHistory = () => {
             console.log('Attempting to fetch appointments for doctor:', doctorDetails.id);
 
             const response = await fetch(
-                `https://backend-diagno-1.onrender.com/api/doctor-appointments/${doctorDetails.id}`,
+                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
                 {
                     method: 'GET',
                     headers: {
@@ -76,7 +76,7 @@ const DoctorBookingHistory = () => {
     const fetchDiagnosisTests = async () => {
         try {
             console.log('Fetching diagnosis tests...');
-            const response = await fetch('https://backend-diagno-1.onrender.com/api/diagnosis-tests', {
+            const response = await fetch('http://localhost:3009/api/diagnosis-tests', {
                 headers: {
                     'Authorization': `Bearer ${Cookies.get('jwt_token')}`,
                     'Content-Type': 'application/json'
@@ -153,7 +153,7 @@ const DoctorBookingHistory = () => {
     const handlePrescriptionSubmit = async () => {
         try {
             const response = await fetch(
-                `https://backend-diagno-1.onrender.com/api/appointments/${selectedAppointment.id}/prescription`,
+                `http://localhost:3009/api/appointments/${selectedAppointment.id}/prescription`,
                 {
                     method: 'POST',
                     headers: {

@@ -93,7 +93,7 @@ const VideoRoom = () => {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                socketRef.current = io('https://backend-diagno-1.onrender.com');
+                socketRef.current = io('http://localhost:3009');
 
                 socketRef.current.on('connect', () => {
                     console.log('Doctor: Socket connected');
@@ -175,7 +175,7 @@ const VideoRoom = () => {
     useEffect(() => {
         const fetchAppointmentDetails = async () => {
             try {
-                const response = await fetch(`https://backend-diagno-1.onrender.com/api/appointments/${meeting_id}`);
+                const response = await fetch(`http://localhost:3009/api/appointments/${meeting_id}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch appointment details');
                 }
