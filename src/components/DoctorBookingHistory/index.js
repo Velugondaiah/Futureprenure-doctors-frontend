@@ -3,7 +3,7 @@ import { Link, useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import './index.css';
 import { FaClipboardList } from 'react-icons/fa';
-
+const API_URL = process.env.REACT_APP_API_URL;
 const DoctorBookingHistory = () => {
     const [appointments, setAppointments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +45,7 @@ const DoctorBookingHistory = () => {
             console.log('Attempting to fetch appointments for doctor:', doctorDetails.id);
 
             const response = await fetch(
-                `http://localhost:3009/api/doctor-appointments/${doctorDetails.id}`,
+                `${API_URL}/api/doctor-appointments/${doctorDetails.id}`,
                 {
                     method: 'GET',
                     headers: {
@@ -76,7 +76,7 @@ const DoctorBookingHistory = () => {
     const fetchDiagnosisTests = async () => {
         try {
             console.log('Fetching diagnosis tests...');
-            const response = await fetch('http://localhost:3009/api/diagnosis-tests', {
+            const response = await fetch('${API_URL}/api/diagnosis-tests', {
                 headers: {
                     'Authorization': `Bearer ${Cookies.get('jwt_token')}`,
                     'Content-Type': 'application/json'
@@ -153,7 +153,7 @@ const DoctorBookingHistory = () => {
     const handlePrescriptionSubmit = async () => {
         try {
             const response = await fetch(
-                `http://localhost:3009/api/appointments/${selectedAppointment.id}/prescription`,
+                `${API_URL}/api/appointments/${selectedAppointment.id}/prescription`,
                 {
                     method: 'POST',
                     headers: {

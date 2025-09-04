@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import './index.css';
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaNotesMedical, FaThermometer } from 'react-icons/fa';
 import Cookies from 'js-cookie';
+const API_URL = process.env.REACT_APP_API_URL;
 
 const VideoRoom = () => {
     const { meeting_id } = useParams();
@@ -93,7 +94,7 @@ const VideoRoom = () => {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                socketRef.current = io('http://localhost:3009');
+                socketRef.current = io('${API_URL}');
 
                 socketRef.current.on('connect', () => {
                     console.log('Doctor: Socket connected');
@@ -175,7 +176,7 @@ const VideoRoom = () => {
     useEffect(() => {
         const fetchAppointmentDetails = async () => {
             try {
-                const response = await fetch(`http://localhost:3009/api/appointments/${meeting_id}`);
+                const response = await fetch(`${API_URL}/api/appointments/${meeting_id}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch appointment details');
                 }

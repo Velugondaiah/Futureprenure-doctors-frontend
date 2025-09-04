@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
-
+const API_URL = process.env.REACT_APP_API_URL;
 // Define InfoRow component at the top
 const InfoRow = ({ label, value }) => (
     <div style={{
@@ -51,7 +51,7 @@ const UserDashboard = () => {
     const fetchAppointments = async () => {
         try {
             const response = await fetch(
-                `http://localhost:3009/api/user-appointments/${userDetails.id}`,
+                `${API_URL}/api/user-appointments/${userDetails.id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${Cookies.get('jwt_token')}`

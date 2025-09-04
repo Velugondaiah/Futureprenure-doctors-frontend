@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import Cookies from 'js-cookie';
+import Cookies from 'js-cookie'; // ✅ Correct
 
+const API_URL = process.env.REACT_APP_API_URL;
 const DoctorLogin = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -20,7 +21,7 @@ const DoctorLogin = () => {
         setErrorMsg('');
 
         try {
-            const response = await fetch('http://localhost:3009/api/doctor-login', {
+            const response = await fetch(`${API_URL}/api/doctor-login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -32,6 +33,8 @@ const DoctorLogin = () => {
             });
 
             console.log('Response status:', response.status);
+            console.log('API URL:', process.env.REACT_APP_API_URL);
+
             const data = await response.json();
             console.log('Response data:', data);
 

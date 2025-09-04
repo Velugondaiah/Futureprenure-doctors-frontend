@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import './index.css';
-
+const API_URL = process.env.REACT_APP_API_URL;
 const DoctorDashboard = () => {
     const [doctorInfo, setDoctorInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -12,7 +12,7 @@ const DoctorDashboard = () => {
         const fetchDoctorDetails = async () => {
             try {
                 const token = Cookies.get('jwt_token');
-                const response = await fetch('http://localhost:3009/api/doctor/profile', {
+                const response = await fetch('${API_URL}/api/doctor/profile', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
