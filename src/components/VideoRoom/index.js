@@ -94,7 +94,7 @@ const VideoRoom = () => {
                     localVideoRef.current.srcObject = stream;
                 }
 
-                socketRef.current = io('${API_URL}');
+                socketRef.current = io(`${API_URL}`);
 
                 socketRef.current.on('connect', () => {
                     console.log('Doctor: Socket connected');
