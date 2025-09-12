@@ -76,7 +76,7 @@ const DoctorBookingHistory = () => {
     const fetchDiagnosisTests = async () => {
         try {
             console.log('Fetching diagnosis tests...');
-            const response = await fetch('${API_URL}/api/diagnosis-tests', {
+            const response = await fetch(`${API_URL}/api/diagnosis-tests`, {
                 headers: {
                     'Authorization': `Bearer ${Cookies.get('jwt_token')}`,
                     'Content-Type': 'application/json'
